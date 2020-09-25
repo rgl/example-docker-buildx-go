@@ -1,5 +1,7 @@
 # About
 
+[![Build status](https://github.com/rgl/example-docker-buildx-go/workflows/Build/badge.svg)](https://github.com/rgl/example-docker-buildx-go/actions?query=workflow%3ABuild)
+
 This is an example on how to use docker buildx to build a multi-platform
 container image of a go application.
 
@@ -60,8 +62,19 @@ Install dependencies:
 
 ```bash
 sudo apt-get install qemu-user-static httpie
-DOCKER_CLI_EXPERIMENTAL=enabled docker buildx create --name local --driver-opt network=host --use
-DOCKER_CLI_EXPERIMENTAL=enabled docker buildx ls
+```
+
+Create a local buildx builder:
+
+```bash
+DOCKER_CLI_EXPERIMENTAL=enabled \
+    docker buildx create \
+        --name local \
+        --driver docker-container \
+        --driver-opt network=host \
+        --use
+DOCKER_CLI_EXPERIMENTAL=enabled \
+    docker buildx ls
 ```
 
 Start an ephemeral local registry to be the target of our buildx build:
@@ -87,10 +100,33 @@ DOCKER_CLI_EXPERIMENTAL=enabled \
 that's why we are using a local registry (and `--driver-opt network=host` when
 we create the `local` builder).
 
-See the tags and manifest:
+List the available repositories:
 
 ```bash
-http http://localhost:5000/v2/example-docker-buildx-go/tags/list
+http get http://localhost:5000/v2/_catalog
+```
+
+Should return something alike:
+
+```
+HTTP/1.1 200 OK
+Content-Length: 66
+Content-Type: application/json; charset=utf-8
+Date: Fri, 25 Sep 2020 07:33:06 GMT
+Docker-Distribution-Api-Version: registry/2.0
+X-Content-Type-Options: nosniff
+
+{
+    "repositories": [
+        "example-docker-buildx-go"
+    ]
+}
+```
+
+List the tags:
+
+```bash
+http get http://localhost:5000/v2/example-docker-buildx-go/tags/list
 ```
 
 Should return something alike:
@@ -114,7 +150,7 @@ X-Content-Type-Options: nosniff
 List the fat manifest:
 
 ```bash
-http \
+http get \
     http://localhost:5000/v2/example-docker-buildx-go/manifests/latest \
     Accept:application/vnd.docker.distribution.manifest.list.v2+json
 ```
@@ -170,7 +206,7 @@ X-Content-Type-Options: nosniff
 Run the example application container as a `linux/amd64` native platform:
 
 ```bash
-docker rmi localhost:5000/example-docker-buildx-go
+docker rmi -f localhost:5000/example-docker-buildx-go
 docker run --rm -t localhost:5000/example-docker-buildx-go
 ```
 
@@ -185,7 +221,7 @@ You should something alike:
 Run the example application container as a `linux/arm64` emulated platform:
 
 ```bash
-docker rmi localhost:5000/example-docker-buildx-go
+docker rmi -f localhost:5000/example-docker-buildx-go
 docker run --platform linux/arm64 --rm -t localhost:5000/example-docker-buildx-go
 ```
 
@@ -200,7 +236,7 @@ You should something alike:
 Run the example application container as a `linux/arm/v7` emulated platform:
 
 ```bash
-docker rmi localhost:5000/example-docker-buildx-go
+docker rmi -f localhost:5000/example-docker-buildx-go
 docker run --platform linux/arm/v7 --rm -t localhost:5000/example-docker-buildx-go
 ```
 

@@ -1,0 +1,53 @@
+name: Build
+on: [push]
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup environment
+        run: sudo ./.github/workflows/setup-environment.sh
+      - name: Build
+        run: |
+          set -euxo pipefail
+          # create a local buildx builder.
+          DOCKER_CLI_EXPERIMENTAL=enabled \
+            docker buildx create \
+              --name local \
+              --driver docker-container \
+              --driver-opt network=host \
+              --use
+          DOCKER_CLI_EXPERIMENTAL=enabled \
+            docker buildx ls
+          # build the images for the given platforms.
+          DOCKER_CLI_EXPERIMENTAL=enabled \
+            docker buildx build \
+              --tag localhost:5000/example-docker-buildx-go \
+              --output type=registry \
+              --platform linux/amd64,linux/arm64,linux/arm/v7 \
+              --progress plain \
+              .
+      - name: Show image manifest
+        run: |
+          set -euxo pipefail
+          http get http://localhost:5000/v2/_catalog
+          http get http://localhost:5000/v2/example-docker-buildx-go/tags/list
+          http get \
+            http://localhost:5000/v2/example-docker-buildx-go/manifests/latest \
+            Accept:application/vnd.docker.distribution.manifest.list.v2+json
+      - name: Execute native container
+        run: |
+          set -euxo pipefail
+          docker rmi -f localhost:5000/example-docker-buildx-go
+          docker run --rm -t localhost:5000/example-docker-buildx-go
+      - name: Execute linux/arm64 emulated container
+        run: |
+          set -euxo pipefail
+          docker rmi -f localhost:5000/example-docker-buildx-go
+          docker run --platform linux/arm64 --rm -t localhost:5000/example-docker-buildx-go
+      - name: Execute linux/arm/v7 emulated container
+        run: |
+          set -euxo pipefail
+          docker rmi -f localhost:5000/example-docker-buildx-go
+          docker run --platform linux/arm/v7 --rm -t localhost:5000/example-docker-buildx-go
