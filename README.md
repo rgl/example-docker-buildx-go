@@ -1,9 +1,10 @@
 # About
 
-[![Build status](https://github.com/rgl/example-docker-buildx-go/workflows/Build/badge.svg)](https://github.com/rgl/example-docker-buildx-go/actions?query=workflow%3ABuild)
+[![Build status](https://img.shields.io/github/workflow/status/rgl/example-docker-buildx-go/Build)](https://github.com/rgl/example-docker-buildx-go/actions?query=workflow%3ABuild)
+[![Docker pulls](https://img.shields.io/docker/pulls/ruilopes/example-docker-buildx-go)](https://hub.docker.com/repository/docker/ruilopes/example-docker-buildx-go)
 
-This is an example on how to use docker buildx to build a multi-platform
-container image of a go application.
+This is an example on how to use docker buildx to build and publish a
+multi-platform container image of a go application.
 
 This uses qemu-user-static to run the non-native platform binaries in emulation
 mode, i.e., docker buildx uses qemu to run `arm` binaries in a `amd64` host.
@@ -13,12 +14,30 @@ other ARM based architectures.
 
 # Usage (Ubuntu 20.04)
 
-Install docker:
+Install skopeo and docker:
 
 ```bash
 # run all the commands as root.
 sudo -i
 
+# install skopeo.
+# see https://github.com/containers/skopeo/blob/master/install.md
+LSB_ID="$(lsb_release --id -s)"
+LSB_RELEASE="$(lsb_release --release -s)"
+echo "deb http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/x${LSB_ID}_${LSB_RELEASE}/ /" \
+    >/etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
+wget -qO- "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/x${LSB_ID}_${LSB_RELEASE}/Release.key" \
+    | apt-key add -
+apt-get update
+apt-get install -y skopeo
+install -d -m 755 /etc/containers/registries.conf.d
+cat >/etc/containers/registries.conf.d/localhost-5000.conf <<'EOF'
+[[registry]]
+location = 'localhost:5000'
+insecure = true
+EOF
+
+# install docker.
 # see https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu/#install-using-the-repository
 apt-get install -y apt-transport-https software-properties-common
 wget -qO- https://download.docker.com/linux/ubuntu/gpg | apt-key add -
@@ -26,7 +45,7 @@ add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(
 apt-get update
 apt-get install -y docker-ce containerd.io
 
-# configure it.
+# configure docker.
 systemctl stop docker
 cat >/etc/docker/daemon.json <<'EOF'
 {
@@ -155,6 +174,8 @@ http get \
     Accept:application/vnd.docker.distribution.manifest.list.v2+json
 ```
 
+**NB** You can also use `skopeo inspect --raw docker://localhost:5000/example-docker-buildx-go`.
+
 Should return something alike:
 
 ```
@@ -246,6 +267,23 @@ You should something alike:
 2020/09/25 07:36:20 go1.15.2
 2020/09/25 07:36:20 GOOS=linux
 2020/09/25 07:36:20 GOARCH=arm
+```
+
+Publish the multi-platform images to Docker Hub:
+
+```bash
+DOCKER_HUB_USER='YOUR-DOCKER-HUB-ACCOUNT-USER'
+DOCKER_HUB_ACCESS_TOKEN='CREATE-THIS-FROM-YOUR-DOCKER-HUB-ACCOUNT-SECURITY-PAGE'
+skopeo copy --all \
+    --dest-creds "$DOCKER_HUB_USER:$DOCKER_HUB_ACCESS_TOKEN" \
+    docker://localhost:5000/example-docker-buildx-go \
+    docker://docker.io/$DOCKER_HUB_USER/example-docker-buildx-go:latest
+```
+
+Use the image:
+
+```bash
+docker run --rm -t $DOCKER_HUB_USER/example-docker-buildx-go
 ```
 
 # Reference

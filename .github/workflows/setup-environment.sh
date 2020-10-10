@@ -1,6 +1,14 @@
 #!/bin/bash
 set -euxo pipefail
 
+# configure skopeo.
+install -d -m 755 /etc/containers/registries.conf.d
+cat >/etc/containers/registries.conf.d/localhost-5000.conf <<'EOF'
+[[registry]]
+location = 'localhost:5000'
+insecure = true
+EOF
+
 # configure.
 systemctl stop docker
 cat >/etc/docker/daemon.json <<'EOF'
