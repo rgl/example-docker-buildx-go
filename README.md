@@ -39,17 +39,19 @@ EOF
 
 # install docker.
 # see https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu/#install-using-the-repository
+docker_version='20.10.7'
 apt-get install -y apt-transport-https software-properties-common
 wget -qO- https://download.docker.com/linux/ubuntu/gpg | apt-key add -
 add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
 apt-get update
-apt-get install -y docker-ce containerd.io
+docker_apt_version="$(apt-cache madison docker-ce | awk "/$docker_version~/{print \$3}")"
+apt-get install -y "docker-ce=$docker_apt_version" "docker-ce-cli=$docker_apt_version" containerd.io
 
 # configure docker.
 systemctl stop docker
 cat >/etc/docker/daemon.json <<'EOF'
 {
-    "experimental": true,
+    "experimental": false,
     "debug": false,
     "log-driver": "journald",
     "labels": [
@@ -86,14 +88,12 @@ sudo apt-get install qemu-user-static httpie
 Create a local buildx builder:
 
 ```bash
-DOCKER_CLI_EXPERIMENTAL=enabled \
-    docker buildx create \
-        --name local \
-        --driver docker-container \
-        --driver-opt network=host \
-        --use
-DOCKER_CLI_EXPERIMENTAL=enabled \
-    docker buildx ls
+docker buildx create \
+    --name local \
+    --driver docker-container \
+    --driver-opt network=host \
+    --use
+docker buildx ls
 ```
 
 Start an ephemeral local registry to be the target of our buildx build:
@@ -106,13 +106,12 @@ docker exec registry registry --version
 Build for multiple platforms:
 
 ```bash
-DOCKER_CLI_EXPERIMENTAL=enabled \
-    docker buildx build \
-        --tag localhost:5000/example-docker-buildx-go \
-        --output type=registry \
-        --platform linux/amd64,linux/arm64,linux/arm/v7 \
-        --progress plain \
-        .
+docker buildx build \
+    --tag localhost:5000/example-docker-buildx-go \
+    --output type=registry \
+    --platform linux/amd64,linux/arm64,linux/arm/v7 \
+    --progress plain \
+    .
 ```
 
 **NB** multiple platforms images [cannot be exported to local docker](https://github.com/docker/buildx#docker)

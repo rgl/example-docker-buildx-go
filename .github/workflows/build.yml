@@ -12,22 +12,19 @@ jobs:
         run: |
           set -euxo pipefail
           # create a local buildx builder.
-          DOCKER_CLI_EXPERIMENTAL=enabled \
-            docker buildx create \
-              --name local \
-              --driver docker-container \
-              --driver-opt network=host \
-              --use
-          DOCKER_CLI_EXPERIMENTAL=enabled \
-            docker buildx ls
+          docker buildx create \
+            --name local \
+            --driver docker-container \
+            --driver-opt network=host \
+            --use
+          docker buildx ls
           # build the images for the given platforms.
-          DOCKER_CLI_EXPERIMENTAL=enabled \
-            docker buildx build \
-              --tag localhost:5000/example-docker-buildx-go \
-              --output type=registry \
-              --platform linux/amd64,linux/arm64,linux/arm/v7 \
-              --progress plain \
-              .
+          docker buildx build \
+            --tag localhost:5000/example-docker-buildx-go \
+            --output type=registry \
+            --platform linux/amd64,linux/arm64,linux/arm/v7 \
+            --progress plain \
+            .
       - name: Show image manifest
         run: |
           set -euxo pipefail

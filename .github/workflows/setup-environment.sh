@@ -13,7 +13,7 @@ EOF
 systemctl stop docker
 cat >/etc/docker/daemon.json <<'EOF'
 {
-    "experimental": true,
+    "experimental": false,
     "debug": false,
     "log-driver": "journald",
     "labels": [
