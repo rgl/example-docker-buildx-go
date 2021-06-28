@@ -17,4 +17,4 @@ else
     echo "Compiling to $TARGETPLATFORM"
 fi
 
-CGO_ENABLED=0 go build -ldflags="-s"
+CGO_ENABLED=0 go build -ldflags="-s -X main.TARGETPLATFORM=$TARGETPLATFORM"

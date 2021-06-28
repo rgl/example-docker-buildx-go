@@ -1,6 +1,6 @@
 # this build is being run in the native $BUILDPLATFORM platform.
 # here you would do a cross-compilation.
-FROM --platform=$BUILDPLATFORM golang:1.15.2-buster AS build
+FROM --platform=$BUILDPLATFORM golang:1.16-buster AS build
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 WORKDIR /build

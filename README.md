@@ -233,9 +233,10 @@ docker run --rm -t localhost:5000/example-docker-buildx-go
 You should something alike:
 
 ```
-2020/09/25 07:36:10 go1.15.2
-2020/09/25 07:36:10 GOOS=linux
-2020/09/25 07:36:10 GOARCH=amd64
+go1.16.5
+TARGETPLATFORM=linux/amd64
+GOOS=linux
+GOARCH=amd64
 ```
 
 Run the example application container as a `linux/arm64` emulated platform:
@@ -248,9 +249,10 @@ docker run --platform linux/arm64 --rm -t localhost:5000/example-docker-buildx-g
 You should something alike:
 
 ```
-2020/09/25 07:36:15 go1.15.2
-2020/09/25 07:36:15 GOOS=linux
-2020/09/25 07:36:15 GOARCH=arm64
+go1.16.5
+TARGETPLATFORM=linux/arm64
+GOOS=linux
+GOARCH=arm64
 ```
 
 Run the example application container as a `linux/arm/v7` emulated platform:
@@ -263,9 +265,10 @@ docker run --platform linux/arm/v7 --rm -t localhost:5000/example-docker-buildx-
 You should something alike:
 
 ```
-2020/09/25 07:36:20 go1.15.2
-2020/09/25 07:36:20 GOOS=linux
-2020/09/25 07:36:20 GOARCH=arm
+go1.16.5
+TARGETPLATFORM=linux/arm/v7
+GOOS=linux
+GOARCH=arm
 ```
 
 Publish the multi-platform images to Docker Hub:
