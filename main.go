@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"runtime"
+	"sort"
+	"strings"
 	"text/template"
 )
 
@@ -26,7 +28,7 @@ table {
 	border: .0625rem solid #c4cdda;
 	border-radius: 0 0 .25rem .25rem;
 	border-spacing: 0;
-    margin-bottom: 1.25rem;
+	margin-bottom: 1.25rem;
 	padding: .75rem 1.25rem;
 	text-align: left;
 	white-space: pre;
@@ -70,15 +72,51 @@ table > tbody > tr:hover {
 			</tr>
 		</tbody>
 	</table>
+	<table>
+		<caption>Request Headers</caption>
+		<tbody>
+			{{- range $header := .RequestHeaders}}
+			{{- range .Values }}
+			<tr>
+				<th>{{$header.Name}}</th>
+				<td>{{.}}</td>
+			</tr>
+			{{- end}}
+			{{- end}}
+		</tbody>
+	</table>
 </body>
 </html>
 `))
+
+type header struct {
+	Name   string
+	Values []string
+}
+
+type headers []header
+
+func headersFromHttpHeaders(httpHeaders http.Header) headers {
+	result := make(headers, 0, len(httpHeaders))
+	for k := range httpHeaders {
+		result = append(result, header{
+			Name:   k,
+			Values: httpHeaders[k],
+		})
+	}
+	return result
+}
+
+func (a headers) Len() int           { return len(a) }
+func (a headers) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a headers) Less(i, j int) bool { return strings.ToLower(a[i].Name) < strings.ToLower(a[j].Name) }
 
 type indexData struct {
 	Runtime        string
 	GOOS           string
 	GOARCH         string
 	TARGETPLATFORM string
+	RequestHeaders headers
 }
 
 var (
@@ -113,6 +151,9 @@ func main() {
 			return
 		}
 
+		headers := headersFromHttpHeaders(r.Header)
+		sort.Sort(headers)
+
 		w.Header().Set("Content-Type", "text/html")
 
 		err := indexTemplate.ExecuteTemplate(w, "Index", indexData{
@@ -121,6 +162,7 @@ func main() {
 			GOOS:           runtime.GOOS,
 			GOARCH:         runtime.GOARCH,
 			//GOARM:          runtime.GOARM, // NB there is no GOARM.
+			RequestHeaders: headers,
 		})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
