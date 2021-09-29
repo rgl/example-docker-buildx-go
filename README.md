@@ -288,6 +288,10 @@ Use the image:
 docker run --rm -t $DOCKER_HUB_USER/example-docker-buildx-go
 ```
 
+`docker buildx` is not supported on Windows, as such, you have to build the
+Windows images separately, then create a manifest list with all of the
+different images. See how in the [`build workflow`](.github/workflows/build.yml).
+
 # Reference
 
 * https://github.com/docker/buildx

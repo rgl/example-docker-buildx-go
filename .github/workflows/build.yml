@@ -1,8 +1,8 @@
 name: Build
 on: [push]
 jobs:
-  build:
-    name: Build
+  linux:
+    name: Linux
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -56,8 +56,113 @@ jobs:
           DOCKER_HUB_ACCESS_TOKEN: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
         run: |
           image_name="$(basename "$GITHUB_REPOSITORY")"
-          image_tag="$(echo "$GITHUB_REF" | sed -E 's,^refs/tags/,,')"
+          image_tag="staging--$(echo "$GITHUB_REF" | sed -E 's,^refs/tags/,,')-linux"
           skopeo copy --all \
             --dest-creds "$DOCKER_HUB_USER:$DOCKER_HUB_ACCESS_TOKEN" \
             docker://localhost:5000/example-docker-buildx-go \
             docker://docker.io/$DOCKER_HUB_USER/$image_name:$image_tag
+  windows:
+    name: Windows
+    strategy:
+      matrix:
+        include:
+          - os: windows-2019
+            build_image: golang:1.17.1-windowsservercore-1809
+            runtime_image: mcr.microsoft.com/windows/nanoserver:1809
+            image_tag_suffix: windowsnanoserver-1809
+          - os: windows-2022
+            build_image: golang:1.17.1-windowsservercore-ltsc2022
+            runtime_image: mcr.microsoft.com/windows/nanoserver:ltsc2022
+            image_tag_suffix: windowsnanoserver-ltsc2022
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up msys2
+        uses: msys2/setup-msys2@v2
+        with:
+          path-type: inherit
+      - name: Build
+        run: |
+          set -euxo pipefail
+          docker build \
+            --tag example-docker-buildx-go \
+            --build-arg BUILDIMAGE=${{ matrix.build_image }} \
+            --build-arg RUNTIMEIMAGE=${{ matrix.runtime_image }} \
+            --file Dockerfile.windows \
+            .
+      - name: Execute native container
+        run: |
+          set -euxo pipefail
+          docker run --rm example-docker-buildx-go
+      - name: Publish to Docker Hub
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          DOCKER_HUB_USER: ${{ secrets.DOCKER_HUB_USER }}
+          DOCKER_HUB_ACCESS_TOKEN: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+        run: |
+          set -euxo pipefail
+          image_name="$DOCKER_HUB_USER/$(basename "$GITHUB_REPOSITORY")"
+          image_tag="staging--$(echo "$GITHUB_REF" | sed -E 's,^refs/tags/,,')-${{ matrix.image_tag_suffix }}"
+          # login into docker hub.
+          docker login --username "$DOCKER_HUB_USER" --password-stdin <<EOF
+          $DOCKER_HUB_ACCESS_TOKEN
+          EOF
+          # publish.
+          docker tag example-docker-buildx-go "$image_name:$image_tag"
+          docker push "$image_name:$image_tag"
+  publish:
+    name: Publish
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [linux, windows]
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Publish to Docker Hub
+        env:
+          DOCKER_HUB_USER: ${{ secrets.DOCKER_HUB_USER }}
+          DOCKER_HUB_ACCESS_TOKEN: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+        run: |
+          set -euxo pipefail
+
+          image_name="$DOCKER_HUB_USER/$(basename "$GITHUB_REPOSITORY")"
+          image_tag="$(echo "$GITHUB_REF" | sed -E 's,^refs/tags/,,')"
+          staging_image_tag="staging--$image_tag"
+
+          # login into docker hub.
+          docker login --username "$DOCKER_HUB_USER" --password-stdin <<EOF
+          $DOCKER_HUB_ACCESS_TOKEN
+          EOF
+
+          # publish the image manifest tag from the staging-- tags.
+          function docker-manifest-mergeish {
+            docker container run --rm \
+              -u "$(id -u):$(id -g)" -e HOME -v "$HOME:$HOME:ro" \
+              -v /etc/docker/certs.d:/etc/docker/certs.d:ro \
+              ruilopes/docker-manifest-mergeish:v0.0.1 "$@"
+          }
+          docker-manifest-mergeish \
+            -target "$image_name:$image_tag" \
+            "$image_name:$staging_image_tag-linux" \
+            "$image_name:$staging_image_tag-windowsnanoserver-1809" \
+            "$image_name:$staging_image_tag-windowsnanoserver-ltsc2022"
+
+          # bail without deleting the staging-- tags.
+          #exit 0
+
+          # delete the staging-- tags.
+          # NB delete is not really supported by the docker registry, so this
+          #    will leave empty manifests in the registry that you have to
+          #    manually delete.
+          #    see https://github.com/regclient/regclient/issues/96#issuecomment-930669873
+          function regctl {
+            docker container run --rm --net host \
+              -u "$(id -u):$(id -g)" -e HOME -v "$HOME:$HOME:ro" \
+              -v /etc/docker/certs.d:/etc/docker/certs.d:ro \
+              regclient/regctl:v0.3.8 "$@"
+          }
+          regctl tag rm "$image_name:$staging_image_tag-linux"
+          regctl tag rm "$image_name:$staging_image_tag-windowsnanoserver-1809"
+          regctl tag rm "$image_name:$staging_image_tag-windowsnanoserver-ltsc2022"

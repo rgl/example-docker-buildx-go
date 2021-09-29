@@ -1,0 +1,11 @@
+ARG BUILDIMAGE
+ARG RUNTIMEIMAGE
+
+FROM $BUILDIMAGE AS build
+WORKDIR /build
+COPY build.ps1 go.* *.go ./
+RUN ./build.ps1
+
+FROM $RUNTIMEIMAGE
+COPY --from=build /build/example-docker-buildx-go.exe /app/
+ENTRYPOINT ["/app/example-docker-buildx-go.exe"]
