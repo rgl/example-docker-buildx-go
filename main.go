@@ -11,6 +11,21 @@ import (
 	"text/template"
 )
 
+var indexTextTemplate = template.Must(template.New("Index").Parse(`# Properties
+
+Runtime: {{.Runtime}}
+TARGETPLATFORM: {{.TARGETPLATFORM}}
+GOOS: {{.GOOS}}
+GOARCH: {{.GOARCH}}
+
+# Request Headers
+{{ range $header := .RequestHeaders}}
+{{- range .Values }}
+{{$header.Name}}: {{.}}
+{{- end}}
+{{- end}}
+`))
+
 var indexTemplate = template.Must(template.New("Index").Parse(`<!DOCTYPE html>
 <html>
 <head>
@@ -154,9 +169,21 @@ func main() {
 		headers := headersFromHttpHeaders(r.Header)
 		sort.Sort(headers)
 
-		w.Header().Set("Content-Type", "text/html")
+		var t *template.Template
+		var contentType string
 
-		err := indexTemplate.ExecuteTemplate(w, "Index", indexData{
+		switch r.URL.Query().Get("format") {
+		case "text":
+			t = indexTextTemplate
+			contentType = "text/plain"
+		default:
+			t = indexTemplate
+			contentType = "text/html"
+		}
+
+		w.Header().Set("Content-Type", contentType)
+
+		err := t.ExecuteTemplate(w, "Index", indexData{
 			Runtime:        runtime.Version(),
 			TARGETPLATFORM: TARGETPLATFORM,
 			GOOS:           runtime.GOOS,
