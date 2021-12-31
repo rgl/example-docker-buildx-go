@@ -39,7 +39,7 @@ EOF
 
 # install docker.
 # see https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu/#install-using-the-repository
-docker_version='20.10.9'
+docker_version='20.10.12'
 apt-get install -y apt-transport-https software-properties-common
 wget -qO- https://download.docker.com/linux/ubuntu/gpg | apt-key add -
 add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
@@ -233,7 +233,7 @@ docker run --rm -t localhost:5000/example-docker-buildx-go
 You should something alike:
 
 ```
-go1.17.1
+go1.17.5
 TARGETPLATFORM=linux/amd64
 GOOS=linux
 GOARCH=amd64
@@ -249,7 +249,7 @@ docker run --platform linux/arm64 --rm -t localhost:5000/example-docker-buildx-g
 You should something alike:
 
 ```
-go1.17.1
+go1.17.5
 TARGETPLATFORM=linux/arm64
 GOOS=linux
 GOARCH=arm64
@@ -265,7 +265,7 @@ docker run --platform linux/arm/v7 --rm -t localhost:5000/example-docker-buildx-
 You should something alike:
 
 ```
-go1.17.1
+go1.17.5
 TARGETPLATFORM=linux/arm/v7
 GOOS=linux
 GOARCH=arm

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"runtime"
 	"sort"
 	"strings"
@@ -17,11 +18,16 @@ Runtime: {{.Runtime}}
 TARGETPLATFORM: {{.TARGETPLATFORM}}
 GOOS: {{.GOOS}}
 GOARCH: {{.GOARCH}}
+{{- range $kv := .Properties}}
+{{- range .Values }}
+{{$kv.Name}}: {{.}}
+{{- end}}
+{{- end}}
 
 # Request Headers
-{{ range $header := .RequestHeaders}}
+{{ range $kv := .RequestHeaders}}
 {{- range .Values }}
-{{$header.Name}}: {{.}}
+{{$kv.Name}}: {{.}}
 {{- end}}
 {{- end}}
 `))
@@ -85,15 +91,23 @@ table > tbody > tr:hover {
 				<th>GOARCH</th>
 				<td>{{.GOARCH}}</td>
 			</tr>
+			{{- range $kv := .Properties }}
+			{{- range .Values }}
+			<tr>
+				<th>{{$kv.Name}}</th>
+				<td>{{.}}</td>
+			</tr>
+			{{- end}}
+			{{- end}}
 		</tbody>
 	</table>
 	<table>
 		<caption>Request Headers</caption>
 		<tbody>
-			{{- range $header := .RequestHeaders}}
+			{{- range $kv := .RequestHeaders }}
 			{{- range .Values }}
 			<tr>
-				<th>{{$header.Name}}</th>
+				<th>{{$kv.Name}}</th>
 				<td>{{.}}</td>
 			</tr>
 			{{- end}}
@@ -104,34 +118,56 @@ table > tbody > tr:hover {
 </html>
 `))
 
-type header struct {
+type keyValue struct {
 	Name   string
 	Values []string
 }
 
-type headers []header
+type keyValues []keyValue
 
-func headersFromHttpHeaders(httpHeaders http.Header) headers {
-	result := make(headers, 0, len(httpHeaders))
+func (a keyValues) Len() int      { return len(a) }
+func (a keyValues) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a keyValues) Less(i, j int) bool {
+	return strings.ToLower(a[i].Name) < strings.ToLower(a[j].Name)
+}
+
+func getProperties() keyValues {
+	result := make(keyValues, 0)
+	for _, v := range os.Environ() {
+		parts := strings.SplitN(v, "=", 2)
+		name := parts[0]
+		if !strings.HasPrefix(name, "EXAMPLE_") {
+			continue
+		}
+		value := parts[1]
+		result = append(result, keyValue{
+			Name:   name,
+			Values: []string{value},
+		})
+	}
+	sort.Sort(result)
+	return result
+}
+
+func getRequestHeaders(httpHeaders http.Header) keyValues {
+	result := make(keyValues, 0, len(httpHeaders))
 	for k := range httpHeaders {
-		result = append(result, header{
+		result = append(result, keyValue{
 			Name:   k,
 			Values: httpHeaders[k],
 		})
 	}
+	sort.Sort(result)
 	return result
 }
-
-func (a headers) Len() int           { return len(a) }
-func (a headers) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a headers) Less(i, j int) bool { return strings.ToLower(a[i].Name) < strings.ToLower(a[j].Name) }
 
 type indexData struct {
 	Runtime        string
 	GOOS           string
 	GOARCH         string
 	TARGETPLATFORM string
-	RequestHeaders headers
+	Properties     keyValues
+	RequestHeaders keyValues
 }
 
 var (
@@ -166,8 +202,8 @@ func main() {
 			return
 		}
 
-		headers := headersFromHttpHeaders(r.Header)
-		sort.Sort(headers)
+		properties := getProperties()
+		requestHeaders := getRequestHeaders(r.Header)
 
 		var t *template.Template
 		var contentType string
@@ -189,7 +225,8 @@ func main() {
 			GOOS:           runtime.GOOS,
 			GOARCH:         runtime.GOARCH,
 			//GOARM:          runtime.GOARM, // NB there is no GOARM.
-			RequestHeaders: headers,
+			Properties:     properties,
+			RequestHeaders: requestHeaders,
 		})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
