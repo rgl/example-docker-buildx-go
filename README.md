@@ -20,6 +20,10 @@ You can use the multi-platform container image as:
 docker run --rm ruilopes/example-docker-buildx-go:v1.6.0
 ```
 
+# Use (Kubernetes)
+
+See https://github.com/rgl/talos-vagrant/blob/main/provision-example-daemonset.sh
+
 # Build (Ubuntu 20.04)
 
 Install skopeo and docker:
