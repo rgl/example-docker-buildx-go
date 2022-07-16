@@ -3,7 +3,7 @@ on: [push]
 jobs:
   linux:
     name: Linux
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
       - name: Setup environment
@@ -117,7 +117,7 @@ jobs:
     name: Publish
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [linux, windows]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
       - name: Publish to Docker Hub
