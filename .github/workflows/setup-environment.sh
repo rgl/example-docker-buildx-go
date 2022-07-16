@@ -44,5 +44,5 @@ docker info
 apt-get install -y qemu-user-static httpie
 
 # start a local registry.
-docker run -d --restart=unless-stopped --name registry -p 5000:5000 registry:2.7.1
+docker run -d --restart=unless-stopped --name registry -p 5000:5000 registry:2.8.1
 docker exec registry registry --version

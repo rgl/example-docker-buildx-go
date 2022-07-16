@@ -99,7 +99,7 @@ docker buildx ls
 Start an ephemeral local registry to be the target of our buildx build:
 
 ```bash
-docker run -d --restart=unless-stopped --name registry -p 5000:5000 registry:2.7.1
+docker run -d --restart=unless-stopped --name registry -p 5000:5000 registry:2.8.1
 docker exec registry registry --version
 ```
 
