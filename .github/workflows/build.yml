@@ -67,11 +67,11 @@ jobs:
       matrix:
         include:
           - os: windows-2019
-            build_image: golang:1.17.5-windowsservercore-1809
+            build_image: golang:1.18.4-windowsservercore-1809
             runtime_image: mcr.microsoft.com/windows/nanoserver:1809
             image_tag_suffix: windowsnanoserver-1809
           - os: windows-2022
-            build_image: golang:1.17.5-windowsservercore-ltsc2022
+            build_image: golang:1.18.4-windowsservercore-ltsc2022
             runtime_image: mcr.microsoft.com/windows/nanoserver:ltsc2022
             image_tag_suffix: windowsnanoserver-ltsc2022
     runs-on: ${{ matrix.os }}
