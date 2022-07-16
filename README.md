@@ -12,7 +12,15 @@ mode, i.e., docker buildx uses qemu to run `arm` binaries in a `amd64` host.
 With this we can build container images that can be used in Raspberry Pi or
 other ARM based architectures.
 
-# Usage (Ubuntu 20.04)
+# Use (Docker)
+
+You can use the multi-platform container image as:
+
+```bash
+docker run --rm ruilopes/example-docker-buildx-go:v1.6.0
+```
+
+# Build (Ubuntu 20.04)
 
 Install skopeo and docker:
 
