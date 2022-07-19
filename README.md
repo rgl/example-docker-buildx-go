@@ -22,7 +22,40 @@ docker run --rm ruilopes/example-docker-buildx-go:v1.6.0
 
 # Use (Kubernetes)
 
-See https://github.com/rgl/talos-vagrant/blob/main/provision-example-daemonset.sh
+You can use the multi-platform container image to launch an example web service `DaemonSet` as:
+
+```bash
+kubectl apply -f - <<'EOF'
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: example-app
+spec:
+  selector:
+    matchLabels:
+      app: example-app
+  template:
+    metadata:
+      labels:
+        app: example-app
+    spec:
+      tolerations:
+        - effect: NoSchedule
+          key: node.kubernetes.io/os
+          operator: Equal
+          value: windows
+      containers:
+        - name: example-app
+          image: ruilopes/example-docker-buildx-go:v1.6.0
+          args:
+            - -listen=:8000
+          ports:
+            - name: web
+              containerPort: 8000
+EOF
+```
+
+See the complete example at https://github.com/rgl/talos-vagrant/blob/main/provision-example-daemonset.sh.
 
 # Build (Ubuntu 20.04)
 
