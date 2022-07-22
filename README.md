@@ -39,6 +39,7 @@ spec:
       labels:
         app: example-app
     spec:
+      enableServiceLinks: false
       tolerations:
         - effect: NoSchedule
           key: node.kubernetes.io/os
