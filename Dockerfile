@@ -11,4 +11,5 @@ RUN ./build.sh
 # buildx --platform argument.
 FROM debian:bullseye-slim
 COPY --from=build /build/example-docker-buildx-go /app/
+USER nobody:nogroup
 ENTRYPOINT ["/app/example-docker-buildx-go"]
