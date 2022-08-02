@@ -17,7 +17,7 @@ other ARM based architectures.
 You can use the multi-platform container image as:
 
 ```bash
-docker run --rm ruilopes/example-docker-buildx-go:v1.6.0
+docker run --rm ruilopes/example-docker-buildx-go:v1.9.0
 ```
 
 # Use (Kubernetes)
@@ -47,7 +47,7 @@ spec:
           value: windows
       containers:
         - name: example-app
-          image: ruilopes/example-docker-buildx-go:v1.6.0
+          image: ruilopes/example-docker-buildx-go:v1.9.0
           args:
             - -listen=:8000
           ports:
