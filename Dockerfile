@@ -1,6 +1,6 @@
 # this build is being run in the native $BUILDPLATFORM platform.
 # here you would do a cross-compilation.
-FROM --platform=$BUILDPLATFORM golang:1.18.5-bullseye AS build
+FROM --platform=$BUILDPLATFORM golang:1.19.0-bullseye AS build
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 WORKDIR /build
