@@ -5,7 +5,7 @@ jobs:
     name: Linux
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup environment
         run: sudo ./.github/workflows/setup-environment.sh
       - name: Build
@@ -19,6 +19,7 @@ jobs:
             --use
           docker buildx ls
           # build the images for the given platforms.
+          export BUILDX_NO_DEFAULT_ATTESTATIONS=1
           docker buildx build \
             --tag localhost:5000/example-docker-buildx-go \
             --output type=registry \
@@ -67,11 +68,11 @@ jobs:
       matrix:
         include:
           - os: windows-2019
-            build_image: golang:1.19.0-windowsservercore-1809
+            build_image: golang:1.22.0-windowsservercore-1809
             runtime_image: mcr.microsoft.com/windows/nanoserver:1809
             image_tag_suffix: windowsnanoserver-1809
           - os: windows-2022
-            build_image: golang:1.19.0-windowsservercore-ltsc2022
+            build_image: golang:1.22.0-windowsservercore-ltsc2022
             runtime_image: mcr.microsoft.com/windows/nanoserver:ltsc2022
             image_tag_suffix: windowsnanoserver-ltsc2022
     runs-on: ${{ matrix.os }}
@@ -79,7 +80,7 @@ jobs:
       run:
         shell: msys2 {0}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up msys2
         uses: msys2/setup-msys2@v2
         with:
@@ -87,6 +88,7 @@ jobs:
       - name: Build
         run: |
           set -euxo pipefail
+          export BUILDX_NO_DEFAULT_ATTESTATIONS=1
           docker build \
             --tag example-docker-buildx-go \
             --build-arg BUILDIMAGE=${{ matrix.build_image }} \
@@ -119,7 +121,7 @@ jobs:
     needs: [linux, windows]
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Publish to Docker Hub
         env:
           DOCKER_HUB_USER: ${{ secrets.DOCKER_HUB_USER }}
@@ -161,7 +163,7 @@ jobs:
             docker container run --rm --net host \
               -u "$(id -u):$(id -g)" -e HOME -v "$HOME:$HOME:ro" \
               -v /etc/docker/certs.d:/etc/docker/certs.d:ro \
-              regclient/regctl:v0.4.4 "$@"
+              regclient/regctl:v0.5.7 "$@"
           }
           regctl tag rm "$image_name:$staging_image_tag-linux"
           regctl tag rm "$image_name:$staging_image_tag-windowsnanoserver-1809"

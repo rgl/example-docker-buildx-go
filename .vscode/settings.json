@@ -1,0 +1,23 @@
+{
+    "cSpell.words": [
+        "buildkit",
+        "buildx",
+        "containerd",
+        "creds",
+        "dearmor",
+        "devel",
+        "Etag",
+        "GOARCH",
+        "httpie",
+        "keyrings",
+        "kubic",
+        "libcontainers",
+        "nosniff",
+        "regctl",
+        "ruilopes",
+        "skopeo",
+        "TARGETPLATFORM",
+        "tbody",
+        "tolerations"
+    ]
+}

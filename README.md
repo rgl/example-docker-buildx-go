@@ -1,6 +1,6 @@
 # About
 
-[![Build status](https://img.shields.io/github/workflow/status/rgl/example-docker-buildx-go/Build)](https://github.com/rgl/example-docker-buildx-go/actions?query=workflow%3ABuild)
+[![Build status](https://img.shields.io/github/actions/workflow/status/rgl/example-docker-buildx-go/build.yml)](https://github.com/rgl/example-docker-buildx-go/actions/workflows/build.yml)
 [![Docker pulls](https://img.shields.io/docker/pulls/ruilopes/example-docker-buildx-go)](https://hub.docker.com/repository/docker/ruilopes/example-docker-buildx-go)
 
 This is an example on how to use docker buildx to build and publish a
@@ -17,7 +17,7 @@ other ARM based architectures.
 You can use the multi-platform container image as:
 
 ```bash
-docker run --rm ruilopes/example-docker-buildx-go:v1.10.0
+docker run --rm ruilopes/example-docker-buildx-go:v1.11.0
 ```
 
 # Use (Kubernetes)
@@ -47,7 +47,7 @@ spec:
           value: windows
       containers:
         - name: example-app
-          image: ruilopes/example-docker-buildx-go:v1.10.0
+          image: ruilopes/example-docker-buildx-go:v1.11.0
           args:
             - -listen=:8000
           ports:
@@ -58,7 +58,7 @@ EOF
 
 See the complete example at https://github.com/rgl/talos-vagrant/blob/main/provision-example-daemonset.sh.
 
-# Build (Ubuntu 20.04)
+# Build (Ubuntu 22.04)
 
 Install skopeo and docker:
 
@@ -85,20 +85,24 @@ EOF
 
 # install docker.
 # see https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu/#install-using-the-repository
-docker_version='20.10.17'
+docker_version='25.0.3'
 apt-get install -y apt-transport-https software-properties-common
-wget -qO- https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+wget -qO- https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/download.docker.com.gpg
+echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/download.docker.com.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" >/etc/apt/sources.list.d/docker.list
 apt-get update
-docker_apt_version="$(apt-cache madison docker-ce | awk "/$docker_version~/{print \$3}")"
-apt-get install -y "docker-ce=$docker_apt_version" "docker-ce-cli=$docker_apt_version" containerd.io
+docker_package_version="$(apt-cache madison docker-ce | awk "/$docker_version/{print \$3}")"
+apt-get install -y "docker-ce=$docker_package_version" "docker-ce-cli=$docker_package_version" containerd.io
 
 # configure docker.
 systemctl stop docker
+install -m 750 -d /etc/docker
 cat >/etc/docker/daemon.json <<'EOF'
 {
     "experimental": false,
     "debug": false,
+    "features": {
+        "buildkit": true
+    },
     "log-driver": "journald",
     "labels": [
         "os=linux"
@@ -145,13 +149,14 @@ docker buildx ls
 Start an ephemeral local registry to be the target of our buildx build:
 
 ```bash
-docker run -d --restart=unless-stopped --name registry -p 5000:5000 registry:2.8.1
+docker run -d --restart=unless-stopped --name registry -p 5000:5000 registry:2.8.3
 docker exec registry registry --version
 ```
 
 Build for multiple platforms:
 
 ```bash
+export BUILDX_NO_DEFAULT_ATTESTATIONS=1
 docker buildx build \
     --tag localhost:5000/example-docker-buildx-go \
     --output type=registry \
@@ -176,7 +181,7 @@ Should return something alike:
 HTTP/1.1 200 OK
 Content-Length: 66
 Content-Type: application/json; charset=utf-8
-Date: Fri, 25 Sep 2020 07:33:06 GMT
+Date: Wed, 21 Feb 2024 07:52:19 GMT
 Docker-Distribution-Api-Version: registry/2.0
 X-Content-Type-Options: nosniff
 
@@ -199,7 +204,7 @@ Should return something alike:
 HTTP/1.1 200 OK
 Content-Length: 54
 Content-Type: application/json; charset=utf-8
-Date: Fri, 25 Sep 2020 07:34:06 GMT
+Date: Wed, 21 Feb 2024 07:52:19 GMT
 Docker-Distribution-Api-Version: registry/2.0
 X-Content-Type-Options: nosniff
 
@@ -211,7 +216,7 @@ X-Content-Type-Options: nosniff
 }
 ```
 
-List the fat manifest:
+Show the image index manifest:
 
 ```bash
 http get \
@@ -221,47 +226,49 @@ http get \
 
 **NB** You can also use `skopeo inspect --raw docker://localhost:5000/example-docker-buildx-go`.
 
+**NB** You can also use `regctl manifest get --format raw-body localhost:5000/example-docker-buildx-go`.
+
 Should return something alike:
 
 ```
 HTTP/1.1 200 OK
-Content-Length: 1076
+Content-Length: 987
 Content-Type: application/vnd.docker.distribution.manifest.list.v2+json
-Date: Fri, 25 Sep 2020 07:34:10 GMT
-Docker-Content-Digest: sha256:5b81907eb34e2fd9a197fb55609362a02727c2b1f5b70b1a1033444e1e425983
+Date: Wed, 21 Feb 2024 07:52:19 GMT
+Docker-Content-Digest: sha256:0ee26ecbf446a5b38155d2d512f822174120e33bb56bc09425bcd8952c0060b7
 Docker-Distribution-Api-Version: registry/2.0
-Etag: "sha256:5b81907eb34e2fd9a197fb55609362a02727c2b1f5b70b1a1033444e1e425983"
+Etag: "sha256:0ee26ecbf446a5b38155d2d512f822174120e33bb56bc09425bcd8952c0060b7"
 X-Content-Type-Options: nosniff
 
 {
     "manifests": [
         {
-            "digest": "sha256:5885438d35170aaa8f500ef90173467c9251a147f77a1e80f24be6c30808ce38",
+            "digest": "sha256:ea5d80666d6a26690f2a3621a42eb01898db1351db5a6d5854b2f5300cba8b38",
             "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
             "platform": {
                 "architecture": "amd64",
                 "os": "linux"
             },
-            "size": 739
+            "size": 702
         },
         {
-            "digest": "sha256:faeb5602dd3a90623edf91411dddabec315ef1e144c715850bef0ef5113883e7",
+            "digest": "sha256:b8fdc4bd2c9c20f3b7c6a22804fc017422969b7ae693dbc1134fefa27456697f",
             "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
             "platform": {
                 "architecture": "arm64",
                 "os": "linux"
             },
-            "size": 739
+            "size": 702
         },
         {
-            "digest": "sha256:b4806787851eb651c6017fdd31ff547d425894a3c42a31fddadd078b0ee0547e",
+            "digest": "sha256:ee164a134bec30bfcdf94a51c714f9b2b058e183c26cef82923e7bb1f93b286d",
             "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
             "platform": {
                 "architecture": "arm",
                 "os": "linux",
                 "variant": "v7"
             },
-            "size": 739
+            "size": 702
         }
     ],
     "mediaType": "application/vnd.docker.distribution.manifest.list.v2+json",
@@ -279,7 +286,7 @@ docker run --rm -t localhost:5000/example-docker-buildx-go
 You should something alike:
 
 ```
-go1.19.0
+go1.22.0
 TARGETPLATFORM=linux/amd64
 GOOS=linux
 GOARCH=amd64
@@ -295,7 +302,7 @@ docker run --platform linux/arm64 --rm -t localhost:5000/example-docker-buildx-g
 You should something alike:
 
 ```
-go1.19.0
+go1.22.0
 TARGETPLATFORM=linux/arm64
 GOOS=linux
 GOARCH=arm64
@@ -311,7 +318,7 @@ docker run --platform linux/arm/v7 --rm -t localhost:5000/example-docker-buildx-
 You should something alike:
 
 ```
-go1.19.0
+go1.22.0
 TARGETPLATFORM=linux/arm/v7
 GOOS=linux
 GOARCH=arm
@@ -343,5 +350,5 @@ different images. See how in the [`build workflow`](.github/workflows/build.yml)
 * https://github.com/docker/buildx
 * https://www.docker.com/blog/multi-platform-docker-builds/
 * https://docs.docker.com/engine/reference/commandline/buildx/
-* https://docs.docker.com/registry/spec/api/
-* https://docs.docker.com/registry/spec/manifest-v2-2/
+* https://docs.docker.com/registry/
+* https://distribution.github.io/distribution/spec/manifest-v2-2/
