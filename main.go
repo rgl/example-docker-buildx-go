@@ -52,7 +52,7 @@ table {
 	margin-bottom: 1.25rem;
 	padding: .75rem 1.25rem;
 	text-align: left;
-	white-space: pre;
+	width: 100%;
 }
 table > caption {
 	background: #f1f6fb;
@@ -65,6 +65,10 @@ table > caption {
 }
 table td, table th {
 	padding: .25rem;
+	white-space: pre-wrap;
+}
+table td {
+	overflow-wrap: anywhere;
 }
 table > tbody > tr:hover {
 	background: #f1f6fb;
