@@ -1,6 +1,8 @@
+# syntax=docker.io/docker/dockerfile:1.9
+
 # this build is being run in the native $BUILDPLATFORM platform.
 # here you would do a cross-compilation.
-FROM --platform=$BUILDPLATFORM golang:1.22.0-bookworm AS build
+FROM --platform=$BUILDPLATFORM golang:1.23.0-bookworm AS build
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 WORKDIR /build

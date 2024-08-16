@@ -68,11 +68,11 @@ jobs:
       matrix:
         include:
           - os: windows-2019
-            build_image: golang:1.22.0-windowsservercore-1809
+            build_image: golang:1.23.0-windowsservercore-1809
             runtime_image: mcr.microsoft.com/windows/nanoserver:1809
             image_tag_suffix: windowsnanoserver-1809
           - os: windows-2022
-            build_image: golang:1.22.0-windowsservercore-ltsc2022
+            build_image: golang:1.23.0-windowsservercore-ltsc2022
             runtime_image: mcr.microsoft.com/windows/nanoserver:ltsc2022
             image_tag_suffix: windowsnanoserver-ltsc2022
     runs-on: ${{ matrix.os }}
@@ -163,7 +163,7 @@ jobs:
             docker container run --rm --net host \
               -u "$(id -u):$(id -g)" -e HOME -v "$HOME:$HOME:ro" \
               -v /etc/docker/certs.d:/etc/docker/certs.d:ro \
-              regclient/regctl:v0.5.7 "$@"
+              regclient/regctl:v0.7.1 "$@"
           }
           regctl tag rm "$image_name:$staging_image_tag-linux"
           regctl tag rm "$image_name:$staging_image_tag-windowsnanoserver-1809"

@@ -44,6 +44,7 @@ systemctl start docker
 docker info
 
 # install dependencies.
+apt-get update
 apt-get install -y qemu-user-static httpie
 
 # start a local registry.

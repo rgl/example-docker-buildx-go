@@ -286,7 +286,7 @@ docker run --rm -t localhost:5000/example-docker-buildx-go
 You should something alike:
 
 ```
-go1.22.0
+go1.23.0
 TARGETPLATFORM=linux/amd64
 GOOS=linux
 GOARCH=amd64
@@ -302,7 +302,7 @@ docker run --platform linux/arm64 --rm -t localhost:5000/example-docker-buildx-g
 You should something alike:
 
 ```
-go1.22.0
+go1.23.0
 TARGETPLATFORM=linux/arm64
 GOOS=linux
 GOARCH=arm64
@@ -318,7 +318,7 @@ docker run --platform linux/arm/v7 --rm -t localhost:5000/example-docker-buildx-
 You should something alike:
 
 ```
-go1.22.0
+go1.23.0
 TARGETPLATFORM=linux/arm/v7
 GOOS=linux
 GOARCH=arm
